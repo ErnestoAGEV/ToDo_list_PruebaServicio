@@ -70,5 +70,13 @@ function cargarTareas() {
     }
 }
 
+document.getElementById('tarea').addEventListener('keydown' , function(event){
+    if(event.key === 'Enter') {
+        mostrarTarea();
+    }
+})
+
 // Cargar tareas cuando la página se carga
 window.onload = cargarTareas;
+
+
