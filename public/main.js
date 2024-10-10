@@ -125,4 +125,3 @@ window.onload = cargarTareas;
 
 // Make functions globally available
 window.mostrarTarea = mostrarTarea;
-
