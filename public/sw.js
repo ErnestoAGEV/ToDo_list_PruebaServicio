@@ -40,28 +40,30 @@ self.addEventListener("activate", event => {
   );
 });
 
-// Interceptación de solicitudes y retorno de archivos en caché u online
 self.addEventListener("fetch", event => {
   event.respondWith(
     caches.match(event.request).then(response => {
-      // Si el archivo está en la caché, se devuelve desde allí
       if (response) {
         return response;
       }
       
-      // Si no está en la caché, intentar obtenerlo desde la red
-      return fetch(event.request).then(networkResponse => {
-        // Si la respuesta es válida, la guardamos en la caché
-        if (networkResponse && networkResponse.status === 200 && event.request.method === 'GET') {
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, networkResponse.clone());
-          });
-        }
-        return networkResponse;
-      });
-    }).catch(() => {
-      // Si falla la red, mostrar una página offline
-      return caches.match('/index.html');
+      // Intentar obtener desde la red, pero manejar errores
+      return fetch(event.request)
+        .then(networkResponse => {
+          if (networkResponse && networkResponse.status === 200 && event.request.method === 'GET') {
+            return caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, networkResponse.clone());
+              return networkResponse;
+            });
+          }
+          return networkResponse;  // Devuelve la respuesta de red
+        })
+        .catch(err => {
+          console.error('Fetch fallido, recurso no disponible:', err);
+          // Podrías retornar un recurso predeterminado si el fetch falla
+          return caches.match('/fallback.html');  // Por ejemplo, una página de error o un fallback
+        });
     })
   );
 });
+
