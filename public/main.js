@@ -1,128 +1,154 @@
 import { ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+import { signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
-// Usar la instancia global de Firebase
+// Use the global Firebase instance
 const db = window.db;
+const auth = window.auth;
 
-// Verifica si el dispositivo está en línea
+// Check if the device is online
 function isOnline() {
     return navigator.onLine;
 }
 
-function guardarTareaOffline(tarea) {
-    let tareas = JSON.parse(localStorage.getItem('tareasOffline')) || [];
-    tareas.push(tarea);
-    localStorage.setItem('tareasOffline', JSON.stringify(tareas));
-}
-
-function sincronizarTareas() {
-    let tareas = JSON.parse(localStorage.getItem('tareasOffline')) || [];
-    tareas.forEach((tarea) => {
-        const newTaskRef = push(ref(db, 'tareas'));
-        set(newTaskRef, tarea)
-        .then(() => {
-            console.log("Tarea sincronizada correctamente a Firebase:", tarea);
-        })
-        .catch((error) => {
-            console.error("Error al sincronizar tarea a Firebase:", error);
-        });
+// Logout user and redirect to login page
+document.getElementById("logoutButton").addEventListener("click", () => {
+    signOut(auth).then(() => {
+        console.log("Sesión cerrada exitosamente");
+        window.location.href = "/login.html"; // Redirigir a la página de login
+    }).catch((error) => {
+        console.error("Error al cerrar la sesión:", error);
     });
-    // Limpiar las tareas locales después de la sincronización
-    localStorage.removeItem('tareasOffline');
+});
+
+// Save task to local storage
+function saveTaskToLocalStorage(task) {
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+    tasks.push(task);
+    localStorage.setItem('tasks', JSON.stringify(tasks));
 }
 
-function mostrarTarea() {
-    let elementoTarea = document.getElementById("tarea").value;
+// Remove task from local storage
+function removeTaskFromLocalStorage(taskText) {
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+    tasks = tasks.filter(task => task.texto !== taskText);
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+}
 
-    if (elementoTarea === "") {
+// Synchronize tasks with Firebase
+function syncTasks() {
+    if (isOnline()) {
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        tasks.forEach((task) => {
+            const newTaskRef = push(ref(db, 'tareas'));
+            set(newTaskRef, task)
+            .then(() => {
+                console.log("Task synced successfully to Firebase:", task);
+                removeTaskFromLocalStorage(task.texto);
+            })
+            .catch((error) => {
+                console.error("Error syncing task to Firebase:", error);
+            });
+        });
+    }
+}
+
+function addTask() {
+    let taskText = document.getElementById("tarea").value;
+
+    if (taskText === "") {
         return;
     }
 
-    let tarea = {
-        texto: elementoTarea,
+    let task = {
+        texto: taskText,
         completada: false
     };
 
     if (isOnline()) {
-        // Añadir tarea a Firebase si está en línea
+        // Add task to Firebase if online
         const newTaskRef = push(ref(db, 'tareas'));
-        set(newTaskRef, tarea)
+        set(newTaskRef, task)
         .then(() => {
-            console.log("Tarea añadida correctamente a Firebase:", elementoTarea);
+            console.log("Task added successfully to Firebase:", taskText);
         })
         .catch((error) => {
-            console.error("Error al añadir tarea a Firebase:", error);
+            console.error("Error adding task to Firebase:", error);
         });
     } else {
-        // Guardar tarea en local storage si está offline
-        guardarTareaOffline(tarea);
-        agregarTareaLocal(tarea.texto);  // Mostrar tarea offline en el DOM
-        console.log("Tarea guardada offline:", elementoTarea);
+        // Save task locally if offline
+        saveTaskToLocalStorage(task);
+        // Add task to DOM immediately when offline
+        addTaskToDOM(task.texto);
+        console.log("Task saved offline:", taskText);
     }
 
-    // Limpiar el campo de entrada
+    // Clear the input field
     document.getElementById('tarea').value = '';
 }
 
-function agregarTareaLocal(textoTarea, key) {
-    let elementoLista = document.getElementById("listaTareas");
+function addTaskToDOM(taskText, key) {
+    let taskList = document.getElementById("listaTareas");
 
-    let itemLista = document.createElement("li");
-    itemLista.className = "list-group-item d-flex justify-content-between align-items-center";
-    itemLista.innerText = textoTarea;
+    // Check if the task already exists in the DOM
+    let existingTasks = Array.from(taskList.children);
+    if (existingTasks.some(item => item.textContent.includes(taskText))) {
+        return; // Task already exists, don't add it again
+    }
 
-    let eliminar = document.createElement("button");
-    eliminar.className = "btn btn-danger btn-sm";
-    eliminar.appendChild(document.createTextNode("Borrar Tarea"));
-    eliminar.onclick = () => {
-        // Eliminar tarea de Firebase
-        remove(ref(db, `tareas/${key}`))
-        .then(() => {
-            console.log("Tarea eliminada correctamente de Firebase:", key);
-        })
-        .catch((error) => {
-            console.error("Error al eliminar tarea de Firebase:", error);
-        });
-        itemLista.remove();
+    let listItem = document.createElement("li");
+    listItem.className = "list-group-item d-flex justify-content-between align-items-center";
+    listItem.innerText = taskText;
+
+    let deleteButton = document.createElement("button");
+    deleteButton.className = "btn btn-danger btn-sm";
+    deleteButton.appendChild(document.createTextNode("Borrar "));
+    deleteButton.onclick = () => {
+        if (isOnline() && key) {
+            // Remove task from Firebase
+            remove(ref(db, `tareas/${key}`))
+            .then(() => {
+                console.log("Task deleted successfully from Firebase:", key);
+            })
+            .catch((error) => {
+                console.error("Error deleting task from Firebase:", error);
+            });
+        }
+        // Remove task from local storage
+        removeTaskFromLocalStorage(taskText);
+        listItem.remove();
     };
 
-    itemLista.appendChild(eliminar);
-    elementoLista.appendChild(itemLista);
+    listItem.appendChild(deleteButton);
+    taskList.appendChild(listItem);
 }
 
-function cargarTareas() {
-    let elementoLista = document.getElementById("listaTareas");
+function loadTasks() {
+    let taskList = document.getElementById("listaTareas");
 
-    console.log("Cargando tareas desde Firebase...");
-    
-    // Escuchar cambios en Firebase
-    onValue(ref(db, 'tareas'), (snapshot) => {
-        // Limpiar la lista actual antes de cargar nuevas tareas
-        elementoLista.innerHTML = '';
+    // Clear the current list
+    taskList.innerHTML = '';
+
+    // Load tasks from local storage
+    let localTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+    localTasks.forEach(task => addTaskToDOM(task.texto));
+
+    if (isOnline()) {
+        console.log("Loading tasks from Firebase...");
         
-        snapshot.forEach((childSnapshot) => {
-            let tarea = childSnapshot.val();
-            let key = childSnapshot.key;
-            
-            // Agregar la tarea al DOM
-            agregarTareaLocal(tarea.texto, key);
+        // Listen for changes in Firebase
+        onValue(ref(db, 'tareas'), (snapshot) => {
+            snapshot.forEach((childSnapshot) => {
+                let task = childSnapshot.val();
+                let key = childSnapshot.key;
+                
+                // Add the task to DOM
+                addTaskToDOM(task.texto, key);
+            });
+        }, (error) => {
+            console.error("Error loading tasks from Firebase:", error);
         });
-    }, (error) => {
-        console.error("Error al leer datos desde Firebase:", error);
-    });
+    }
 }
 
-// Escuchar cambios en la conexión
-window.addEventListener('online', sincronizarTareas);
-
-// Asignar el evento 'keydown' para agregar la tarea con "Enter"
-document.getElementById('tarea').addEventListener('keydown', function(event){
-    if(event.key === 'Enter') {
-        mostrarTarea();
-    }
-});
-
-// Cargar tareas cuando la página se carga
-window.onload = cargarTareas;
-
-// Hacer las funciones accesibles globalmente
-window.mostrarTarea = mostrarTarea;
+// Load tasks when the page loads
+window.addEventListener('load', loadTasks);
