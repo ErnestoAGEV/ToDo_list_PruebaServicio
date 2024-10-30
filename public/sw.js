@@ -6,6 +6,7 @@ const urlsToCache = [
   "/manifest.json",
   "/icon-192.png",
   "/icon-512.png",
+  "/fallback.html",  // Asegúrate de tener esta página para mostrar en caso de fallos.
   "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css",
   "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js",
   "https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
@@ -40,30 +41,31 @@ self.addEventListener("activate", event => {
   );
 });
 
+// Intercepción de peticiones para servir desde caché o red
 self.addEventListener("fetch", event => {
   event.respondWith(
     caches.match(event.request).then(response => {
       if (response) {
-        return response;
+        return response;  // Si el recurso está en caché, lo devuelve.
       }
-      
-      // Intentar obtener desde la red, pero manejar errores
+
+      // Intentar obtener el recurso desde la red y almacenarlo en caché si es exitoso
       return fetch(event.request)
         .then(networkResponse => {
+          // Solo cachear respuestas exitosas (status 200) y métodos GET
           if (networkResponse && networkResponse.status === 200 && event.request.method === 'GET') {
             return caches.open(CACHE_NAME).then(cache => {
-              cache.put(event.request, networkResponse.clone());
-              return networkResponse;
+              cache.put(event.request, networkResponse.clone());  // Almacena en caché
+              return networkResponse;  // Devuelve la respuesta de la red
             });
           }
-          return networkResponse;  // Devuelve la respuesta de red
+          return networkResponse;  // Si no es exitoso o no es GET, simplemente devuelve la respuesta de la red
         })
         .catch(err => {
           console.error('Fetch fallido, recurso no disponible:', err);
-          // Podrías retornar un recurso predeterminado si el fetch falla
-          return caches.match('/fallback.html');  // Por ejemplo, una página de error o un fallback
+          // Devuelve el fallback si no se encuentra el recurso en caché ni en la red
+          return caches.match('/fallback.html');
         });
     })
   );
 });
-
