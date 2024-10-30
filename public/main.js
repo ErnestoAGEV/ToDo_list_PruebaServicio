@@ -17,9 +17,18 @@ if (logoutButton) {
             logoutButton.disabled = true;
             logoutButton.textContent = "Cerrando sesión...";
             
-            await signOut(auth);
-            console.log("Sesión cerrada exitosamente");
-            window.location.href = "/login.html";
+            // Verifica si el usuario está autenticado antes de intentar cerrar sesión
+            const user = auth.currentUser;
+            if (user) {
+                await signOut(auth);
+                console.log("Sesión cerrada exitosamente");
+                window.location.href = "./logout.html";  // Redirige al login después de cerrar sesión
+            } else {
+                console.log("No hay ningún usuario autenticado");
+                alert("No hay sesión activa.");
+                logoutButton.disabled = false;
+                logoutButton.textContent = "Cerrar sesión";
+            }
         } catch (error) {
             console.error("Error al cerrar la sesión:", error);
             logoutButton.disabled = false;
@@ -28,6 +37,7 @@ if (logoutButton) {
         }
     });
 }
+
 
 // Guardar tarea en el almacenamiento local
 function saveTaskToLocalStorage(task) {

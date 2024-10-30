@@ -42,7 +42,7 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth();
 
-        // Asegúrate de que la función register está definida
+        // Definir la función de registro
         function register() {
             const email = document.getElementById("registerEmail").value;
             const password = document.getElementById("registerPassword").value;
@@ -59,6 +59,19 @@
 
         // Añadir evento al botón
         document.getElementById("registerButton").addEventListener("click", register);
+
+        // Detectar el presionado de la tecla Enter en los campos de email y password
+        document.getElementById("registerEmail").addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                register();
+            }
+        });
+
+        document.getElementById("registerPassword").addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                register();
+            }
+        });
     </script>
 </body>
 </html>
