@@ -72,6 +72,11 @@ function syncTasks() {
     }
 }
 
+window.addEventListener('online', () => {
+ syncTasks();   
+} );
+
+
 // Agregar tarea
 function addTask() {
     let taskText = document.getElementById("tarea").value;
