@@ -1,12 +1,11 @@
 const CACHE_NAME = "tareas-cache-v1";
 const urlsToCache = [
   "/",
-  "/index.html",
-  "/main.js",
-  "/manifest.json",
+  "/public/index.html",
+  "/public/main.js",
+  "/public/manifest.json",
   "/icon-192.png",
   "/icon-512.png",
-  "/fallback.html",  // Asegúrate de tener esta página para mostrar en caso de fallos.
   "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css",
   "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js",
   "https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"

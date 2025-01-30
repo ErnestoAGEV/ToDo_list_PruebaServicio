@@ -72,6 +72,7 @@ function syncTasks() {
     }
 }
 
+
 window.addEventListener('online', () => {
  syncTasks();   
 } );
@@ -181,7 +182,7 @@ auth.onAuthStateChanged((user) => {
         loadTasks();
         syncTasks();  // Sincronizar las tareas locales con Firebase
     } else {
-        window.location.href = "/login.html";
+        window.location.href = "/public/login.html";
     }
 });
 
