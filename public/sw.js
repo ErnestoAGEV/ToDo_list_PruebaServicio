@@ -1,9 +1,9 @@
 const CACHE_NAME = "tareas-cache-v1";
 const urlsToCache = [
   "/",
-  "/ToDo_list_PruebaServicio./public/index.html",
-  "/ToDo_list_PruebaServicio./public/main.js",
-  "/ToDo_list_PruebaServicio./public/manifest.json",
+  "/public/index.html",
+  "/public/main.js",
+  "/public/manifest.json",
   "/ToDo_list_PruebaServicio./icon-192.png",
   "/ToDo_list_PruebaServicio./icon-512.png",
   "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css",
