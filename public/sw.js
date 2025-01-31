@@ -42,6 +42,7 @@ self.addEventListener("activate", event => {
 
 // Intercepción de peticiones para servir desde caché o red
 self.addEventListener("fetch", event => {
+  //if(event.request.url.includes("")) {
   event.respondWith(
     caches.match(event.request).then(response => {
       if (response) {
